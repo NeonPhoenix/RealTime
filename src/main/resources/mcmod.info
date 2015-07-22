@@ -3,8 +3,8 @@
   "modid": "mod_realtime",
   "name": "Pacas00's Real Time!",
   "description": "A Coremod that makes Minecraft follow real time.",
-  "version": "${version}",
-  "mcversion": "${mcversion}",
+  "version": "v1.1.1",
+  "mcversion": "1.7.10",
   "url": "",
   "updateUrl": "",
   "authors": [

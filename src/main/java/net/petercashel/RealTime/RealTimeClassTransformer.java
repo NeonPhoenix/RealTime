@@ -17,41 +17,67 @@ import cpw.mods.fml.relauncher.FMLRelaunchLog;
 
 public class RealTimeClassTransformer implements net.minecraft.launchwrapper.IClassTransformer {
 	
-	private static boolean debug = false;
+	final static boolean isDebugEnvironment = Boolean.parseBoolean(System.getenv("JavaDebugEnvironment"));
+	
+	// Static class to record all the names of classes, methods and fields for ASM
+	
+		//Class:
+		//WorldProvider
+		static String WorldProvider = "net.minecraft.world.WorldProvider";
+		static String WorldProviderOBF = "aqo";
+		
+		//Methods:
+		//calculateCelestialAngle
+		static String calculateCelestialAngle  = "calculateCelestialAngle";
+		static String calculateCelestialAngleOBF  = "a";
+		//Sig 
+		static String calculateCelestialAngleSig = "(JF)F";
+		 
+		 
+		//getMoonPhase
+		static String getMoonPhase = "getMoonPhase";
+		static String getMoonPhaseOBF = "a";
+		//Sig
+		static String getMoonPhaseSig = "(J)I";
+	
+	// Static class to record all the names of classes, methods and fields for ASM 
 
 	@Override
 	public byte[] transform(String arg0, String arg1, byte[] arg2) {
 
-
-		if (arg0.equals("aqo")) {
-			if (debug) System.out.println("*********RealTime INSIDE OBFUSCATED WORLDPROVIDER TRANSFORMER ABOUT TO PATCH: " + arg0);
-			return patchClassASM(arg0, arg2, true);
+		if (arg0.equals(WorldProviderOBF)) {
+			if (isDebugEnvironment) System.out.println("*********RealTime INSIDE OBFUSCATED WORLDPROVIDER TRANSFORMER ABOUT TO PATCH: " + arg0);
+			return patchClassASMWorldProvider(arg0, arg2, true);
 		}
 
-		if (arg0.equals("net.minecraft.world.WorldProvider")) {
-			if (debug) System.out.println("*********RealTime INSIDE WORLDPROVIDER TRANSFORMER ABOUT TO PATCH: " + arg0);
-			return patchClassASM(arg0, arg2, false);
+		if (arg0.equals(WorldProvider)) {
+			if (isDebugEnvironment) System.out.println("*********RealTime INSIDE WORLDPROVIDER TRANSFORMER ABOUT TO PATCH: " + arg0);
+			return patchClassASMWorldProvider(arg0, arg2, false);
 		}
-
-
-
-
+		
 		return arg2;
 	}
 
-	public byte[] patchClassASM(String name, byte[] bytes, boolean obfuscated) {
+	//patchClassASM for WorldProvider. Specifically named due to upcoming expansion to properly support weather.
+	public byte[] patchClassASMWorldProvider(String name, byte[] bytes, boolean obfuscated) {
 
 		String targetMethodName = "";
 		String targetMethodName2 = "";
 
 		if(obfuscated == true) {
+			// These link to static string references to the obfuscated method names. 
+			// These are pulled from modding resources inside the MCP.
+			// It's quite normal for obfuscated method names to have the same name
+			// so long as the parameters are different.
+			
 			//calculateCelestialAngle
-			targetMethodName ="a";
+			targetMethodName = calculateCelestialAngleOBF;
 			//getMoonPhase
-			targetMethodName2 ="a"; // b or d _ not sure...  ..? a?
+			targetMethodName2 = getMoonPhaseOBF;
+			
 		} else {
-			targetMethodName ="calculateCelestialAngle";
-			targetMethodName2 ="getMoonPhase";
+			targetMethodName = calculateCelestialAngle;
+			targetMethodName2 = getMoonPhase;
 		}
 
 		//set up ASM class manipulation stuff. Consult the ASM docs for details
@@ -61,17 +87,18 @@ public class RealTimeClassTransformer implements net.minecraft.launchwrapper.ICl
 
 
 
-		//Now we loop over all of the methods declared inside the Explosion class until we get to the targetMethodName "doExplosionB"
+		//Now we loop over all of the methods declared inside the class until we get to the targetMethodName
 
 		// find method to inject into
 		Iterator<MethodNode> methods = classNode.methods.iterator();
 		while(methods.hasNext())
 		{
 			MethodNode m = methods.next();
-			if (debug) System.out.println("*********RealTime Method Name: "+m.name + " Desc:" + m.desc);
+			if (isDebugEnvironment) System.out.println("*********RealTime Method Name: "+m.name + " Desc:" + m.desc);
 
+			// calculateCelestialAngle
 			if (m.name.equals(targetMethodName) && m.desc.equals("(JF)F")) {
-				if (debug) System.out.println("*********RealTime Inside target method!");
+				if (isDebugEnvironment) System.out.println("*********RealTime Inside target method!");
 
 				InsnList toInject = new InsnList();
 
@@ -89,11 +116,12 @@ public class RealTimeClassTransformer implements net.minecraft.launchwrapper.ICl
 				m.instructions.add(toInject);
 
 
-				if (debug) System.out.println("RealTime Patching Complete!");
+				if (isDebugEnvironment) System.out.println("RealTime Patching Complete!");
 			}
 
+			// getMoonPhase
 			if (m.name.equals(targetMethodName2) && m.desc.equals("(J)I")) {
-				if (debug) System.out.println("*********RealTime Inside target method!");
+				if (isDebugEnvironment) System.out.println("*********RealTime Inside target method!");
 
 				InsnList toInject = new InsnList();
 
@@ -110,7 +138,7 @@ public class RealTimeClassTransformer implements net.minecraft.launchwrapper.ICl
 				m.instructions.add(toInject);
 
 
-				if (debug) System.out.println("RealTime Patching Complete!");
+				if (isDebugEnvironment) System.out.println("RealTime Patching Complete!");
 			}
 
 

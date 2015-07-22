@@ -9,41 +9,36 @@ buildscript {
             name = "sonatype"
             url = "https://oss.sonatype.org/content/repositories/snapshots/"
         }
-        maven {
-            name = "archiva.petercashel.net"
-            url = "http://117.120.47.2:8110/repository/internal/"
-        }
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
     }
 }
 
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'org.ow2.asm' && details.requested.name == 'asm-debug-all' && details.requested.version == '4.1') {
+            //prefer different version which contains some necessary fixes
+            details.useVersion '5.0.1'
+        }
+    }
+}
+
 apply plugin: 'forge'
 apply plugin: 'java'
 
-//dependencies {
-//  compile 'net.petercashel.PacasStuff:PacasStuff:1.7.10-v1.0.7'
-//}
-//repositories {
-//        maven {
-//            name = "archiva.petercashel.net"
-//            url = "http://117.120.47.2:8110/repository/internal/"
-//        }
-//    }
-
 def buildnumber = System.getenv("BUILD_NUMBER") ?: "1"
-version = "v1.0." + buildnumber.toString()
+version = "v1.1." + buildnumber.toString()
 group= "net.petercashel.RealTime" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "RealTime"
 
-def mavenpass = System.getenv("maven_pass") ?: "1"
-def mavenuser = System.getenv("maven_user") ?: "1"
+defaultTasks 'build'
 
 minecraft {
-    version = "1.7.10-10.13.0.1199"
-    assetDir = "eclipse/assets"
+    version = "1.7.10-10.13.4.1490-1.7.10"
+	runDir = "eclipse"
 }
+
 processResources
 {
     // replace stuff in mcmod.info, nothing else
@@ -104,58 +99,4 @@ task copyFiles(type: Copy) {
     into ('build/libs/')
     include (inputFile)
     rename (inputFile, outputFile)
-}
-
-uploadArchives {
-    dependsOn 'reobf', 'copyFiles'
-    repositories {
-            logger.info('Publishing to files server')
-            
-            mavenDeployer {
-                repository(url: "http://117.120.47.2:8110/repository/internal/") {
-                    authentication(userName: mavenuser.toString(), password: mavenpass.toString())
-                }
-
-                // This is just the pom data for the maven repo
-                pom {
-                    groupId = project.group
-                    version = "${project.minecraft.version}-${project.version}"
-                    artifactId = project.archivesBaseName
-                    project {
-                        name project.archivesBaseName
-                        packaging 'jar'
-                        description 'RealTime'
-                        url 'https://github.com/pacas00/RealTime'
-
-                        scm {
-                            url 'https://github.com/pacas00/RealTime'
-                            connection 'scm:git:git://github.com/pacas00/RealTime.git'
-                            developerConnection 'scm:git:git@github.com:pacas00/RealTime.git'
-                        }
-
-                        issueManagement {
-                            system 'github'
-                            url 'https://github.com/pacas00/RealTime/issues'
-                        }
-
-                        licenses {
-                            license {
-                                name 'GNU Public License (GPL), Version 3.0'
-                                url 'http://www.gnu.org/licenses/gpl-3.0.txt'
-                                distribution 'repo'
-                            }
-                        }
-
-                        developers {
-                            developer {
-                                id 'pacas00'
-                                name 'pacas00'
-                                roles { role 'developer' }
-                            }
-                        }
-                    }
-                }
-            }
-        
-    }
 }
